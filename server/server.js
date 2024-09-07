@@ -32,7 +32,7 @@ app.use("/api", protectedRoutes);
 app.use("/api/profiles", profileRoutes);
 
 // Use the Post routes
-app.use("/api/posts", postRoutes);
+app.use("/api", postRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

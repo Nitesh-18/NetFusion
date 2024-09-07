@@ -59,7 +59,7 @@ export const uploadToFirebase = async (req, res, next) => {
                 action: "read",
                 expires: "03-01-2500",
               })
-              .then((url) => ({ fieldName, url }))
+              .then((url) => ({ fieldName, url: url[0] })) // Ensure URL is a single string
           );
         }
       }
