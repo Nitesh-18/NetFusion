@@ -1,6 +1,6 @@
 import Post from "../models/Post.js";
 import User from "../models/User.js";
-import bucket from "../config/firebaseConfig.js";
+import {bucket} from "../config/firebaseConfig.js";
 import { v4 as uuidv4 } from "uuid";
 
 // Create a new post (unchanged)

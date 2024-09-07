@@ -7,31 +7,23 @@ import {
 } from "../controllers/postController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { checkPostOwnership } from "../middlewares/ownershipMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js"; // Import upload middleware
+import upload, { uploadToFirebase } from "../middlewares/uploadMiddleware.js"; // Import the updated middleware
 
 const router = express.Router();
 
-// Handle image and video uploads
-router.post(
-  "/posts",
-  protect,
-  upload.fields([
-    { name: "image", maxCount: 1 },
-    { name: "video", maxCount: 1 },
-  ]),
-  createPost
-);
-router.get("/posts", getPosts);
+router.post("/", protect, upload, uploadToFirebase, createPost);
+
+router.get("/", getPosts);
+
 router.put(
-  "/posts/:id",
+  "/:id",
   protect,
   checkPostOwnership,
-  upload.fields([
-    { name: "image", maxCount: 1 },
-    { name: "video", maxCount: 1 },
-  ]),
+  upload,
+  uploadToFirebase,
   updatePost
 );
-router.delete("/posts/:id", protect, checkPostOwnership, deletePost);
+
+router.delete("/:id", protect, checkPostOwnership, deletePost);
 
 export default router;
