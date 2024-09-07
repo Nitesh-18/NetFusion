@@ -1,30 +1,33 @@
 import multer from "multer";
+import { v4 as uuidv4 } from "uuid";
 import path from "path";
 
-// Configure storage for image and video
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Specify the folder to save files
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, Date.now() + ext);
-  },
-});
+// Configure Multer storage
+const storage = multer.memoryStorage(); // Store files in memory for processing
 
-// Filter file types
+// File filter to restrict file types
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|mp4|mov/;
   const extname = allowedTypes.test(
     path.extname(file.originalname).toLowerCase()
   );
   const mimetype = allowedTypes.test(file.mimetype);
+
   if (mimetype && extname) {
     return cb(null, true);
+  } else {
+    cb(new Error("Error: Images and Videos Only!"), false);
   }
-  cb("Error: Images and Videos Only!");
 };
 
-const upload = multer({ storage, fileFilter });
+// Configure multer
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
+  fileFilter,
+}).fields([
+  { name: "image", maxCount: 1 },
+  { name: "video", maxCount: 1 },
+]);
 
 export default upload;
