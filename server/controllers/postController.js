@@ -48,29 +48,52 @@ export const updatePost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const postId = req.params.id;
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
     if (post.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    // Delete associated image and video files from Firebase Storage
+    // Array to hold filenames of files to delete
+    const filesToDelete = [];
+
     if (post.image) {
-      const imageName = post.image.split("/").pop().split("?")[0]; // Extract the file name from URL
-      await bucket.file(imageName).delete();
+      const imageName = decodeURIComponent(post.image.split("/").pop().split("?")[0]);
+      filesToDelete.push(imageName);
+      console.log("Image file to delete:", imageName);
     }
-
     if (post.video) {
-      const videoName = post.video.split("/").pop().split("?")[0]; // Extract the file name from URL
-      await bucket.file(videoName).delete();
+      const videoName = decodeURIComponent(post.video.split("/").pop().split("?")[0]);
+      filesToDelete.push(videoName);
+      console.log("Video file to delete:", videoName);
     }
 
-    await post.remove();
+    // Delete files from Firebase Storage
+    for (const fileName of filesToDelete) {
+      try {
+        console.log("Attempting to delete file:", fileName);
+        await bucket.file(fileName).delete();
+        console.log(`Successfully deleted file: ${fileName}`);
+      } catch (err) {
+        console.error(`Failed to delete file ${fileName}:`, err.message);
+      }
+    }
+
+    // Remove the post from the database
+    await Post.deleteOne({ _id: postId });
     res.status(200).json({ message: "Post deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
 
 // Get all posts (unchanged)
 export const getPosts = async (req, res) => {

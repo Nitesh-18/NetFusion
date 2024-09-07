@@ -36,6 +36,17 @@ export const uploadToFirebase = async (req, res, next) => {
     if (req.files) {
       for (const [fieldName, files] of Object.entries(req.files)) {
         for (const file of files) {
+          // Ensure the file matches its field
+          const validFieldType =
+            (fieldName === "image" && file.mimetype.startsWith("image/")) ||
+            (fieldName === "video" && file.mimetype.startsWith("video/"));
+
+          if (!validFieldType) {
+            return res
+              .status(400)
+              .json({ message: `Invalid file type for field ${fieldName}` });
+          }
+
           const fileName = `${uuidv4()}_${file.originalname}`;
           const blob = bucket.file(fileName);
 
