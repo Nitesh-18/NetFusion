@@ -8,14 +8,20 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
-import protectedRoutes from "./routes/protectedRoutes.js"; // Import protected routes
+import protectedRoutes from "./routes/protectedRoutes.js";
+import messagesRoutes from "./routes/messagesRoutes.js";
 import http from "http"; // Import http module for WebSocket server
 import { Server } from "socket.io"; // Import Socket.IO
 
 // Initialize Express and HTTP server
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000", // Replace with your frontend's origin
+    methods: ["GET", "POST"],
+  },
+});
 
 app.use(cors());
 app.use(express.json());
@@ -38,21 +44,34 @@ app.use("/api/profiles", profileRoutes);
 // Use the Post routes
 app.use("/api", postRoutes);
 
+// Use the Messages routes
+app.use("/api", messagesRoutes);
+
 // WebSocket server setup
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
-  // Load previous messages (optional)
-  // Message.find().then(messages => {
-  //   socket.emit('load_messages', messages);
-  // });
-
   // Handle new messages
   socket.on("send_message", async (messageData) => {
-    // Save message to database
-    // const newMessage = new Message(messageData);
-    // await newMessage.save();
-    io.emit("receive_message", messageData); // Broadcast message to all clients
+    try {
+      // Create a new message instance
+      const newMessage = new Message({
+        sender: messageData.sender, // Assumes messageData contains sender
+        recipient: messageData.recipient, // Assumes messageData contains recipient
+        content: messageData.content,
+        mediaUrl: messageData.mediaUrl, // Optional: Only if the message has media
+        mediaType: messageData.mediaType, // Optional: Only if the message has media
+      });
+
+      // Save the message to the database
+      await newMessage.save();
+
+      // Broadcast the message to all clients (or just the relevant chat room)
+      io.emit("receive_message", messageData);
+    } catch (error) {
+      console.error("Error saving message:", error);
+      socket.emit("error", { message: "Failed to save message" });
+    }
   });
 
   socket.on("disconnect", () => {
