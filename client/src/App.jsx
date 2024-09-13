@@ -1,17 +1,16 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import TestChat from './components/TestChat'
+// src/App.jsx
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import AuthPage from "./pages/AuthPage";
 
-function App() {
-  const [count, setCount] = useState(0)
-
+const App = () => {
   return (
-    <>
-      <TestChat/>
-    </>
-  )
-}
+    <div className="font-body text-secondary">
+      <Routes>
+        <Route path="/" element={<AuthPage />} />
+      </Routes>
+    </div>
+  );
+};
 
-export default App
+export default App;
