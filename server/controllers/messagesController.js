@@ -60,7 +60,7 @@ export const deleteMessage = async (req, res) => {
     }
 
     // Delete the message
-    await message.remove();
+    await Message.findByIdAndDelete(messageId); // Use findByIdAndDelete for deletion
 
     res.status(200).json({ message: "Message deleted successfully" });
   } catch (error) {
