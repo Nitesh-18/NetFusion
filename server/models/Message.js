@@ -20,7 +20,7 @@ const messageSchema = new Schema(
       trim: true,
     },
     mediaUrl: {
-      type: String,
+      type: [String],
       required: false,
     },
     mediaType: {

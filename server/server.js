@@ -10,6 +10,8 @@ import profileRoutes from "./routes/profileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import protectedRoutes from "./routes/protectedRoutes.js";
 import messagesRoutes from "./routes/messagesRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import testRoute from "./routes/testRoute.js"
 import Message from "./models/Message.js"; // Import the Message model
 import http from "http"; // Import http module for WebSocket server
 import { Server } from "socket.io"; // Import Socket.IO
@@ -48,6 +50,11 @@ app.use("/api", postRoutes);
 // Use the Messages routes
 app.use("/api", messagesRoutes);
 
+// Use the Chat routes
+app.use("/api/chats", chatRoutes);
+
+app.use("/api", testRoute);
+
 // WebSocket server setup
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
@@ -55,6 +62,17 @@ io.on("connection", (socket) => {
   // Handle new messages
   socket.on("send_message", async (messageData) => {
     try {
+      // Validate messageData
+      if (
+        !messageData.sender ||
+        !messageData.recipient ||
+        !messageData.content
+      ) {
+        console.error("Invalid message data:", messageData);
+        socket.emit("error", { message: "Invalid message data" });
+        return;
+      }
+
       // Create a new message instance
       const newMessage = new Message({
         sender: messageData.sender, // Expects ObjectId
