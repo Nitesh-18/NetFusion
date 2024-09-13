@@ -17,12 +17,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure multer
+// Configure multer for multiple file uploads
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
   fileFilter,
-}).single("media"); // Accept a single file for media
+}).array("media", 10); // Accept up to 10 files for media
 
 // Middleware to handle file uploads to Firebase Storage
 export const uploadMessageMedia = async (req, res, next) => {
@@ -31,31 +31,36 @@ export const uploadMessageMedia = async (req, res, next) => {
       return next(err);
     }
     try {
-      if (req.file) {
-        const file = req.file;
-        const fileName = `${uuidv4()}_${file.originalname}`;
-        const blob = bucket.file(fileName);
+      if (req.files) {
+        const mediaUrls = await Promise.all(
+          req.files.map(async (file) => {
+            const fileName = `${uuidv4()}_${file.originalname}`;
+            const blob = bucket.file(fileName);
 
-        // Create a write stream to upload file to Firebase
-        const blobStream = blob.createWriteStream({
-          metadata: {
-            contentType: file.mimetype,
-          },
-        });
+            // Create a write stream to upload file to Firebase
+            const blobStream = blob.createWriteStream({
+              metadata: {
+                contentType: file.mimetype,
+              },
+            });
 
-        // Handle file upload
-        blobStream.on("error", (err) => {
-          next(err);
-        });
+            // Handle file upload
+            await new Promise((resolve, reject) => {
+              blobStream.on("error", (err) => reject(err));
+              blobStream.end(file.buffer);
+              resolve();
+            });
 
-        blobStream.end(file.buffer);
+            const url = await blob.getSignedUrl({
+              action: "read",
+              expires: "03-01-2500",
+            });
 
-        const url = await blob.getSignedUrl({
-          action: "read",
-          expires: "03-01-2500",
-        });
+            return url[0]; // Return the media URL
+          })
+        );
 
-        req.mediaUrl = url[0]; // Store the media URL
+        req.mediaUrls = mediaUrls; // Store the array of media URLs
       }
 
       next();

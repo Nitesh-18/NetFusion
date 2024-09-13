@@ -23,11 +23,6 @@ const messageSchema = new Schema(
       type: [String],
       required: false,
     },
-    mediaType: {
-      type: String,
-      enum: ["image", "video", "none"],
-      default: "none",
-    },
     createdAt: {
       type: Date,
       default: Date.now,

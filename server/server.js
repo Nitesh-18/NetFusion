@@ -2,17 +2,16 @@ import dotenv from "dotenv";
 dotenv.config(); // Load environment variables as early as possible
 
 import express from "express";
+import cors from "cors";
 import passport from "passport";
 import { connect } from "mongoose";
-import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import protectedRoutes from "./routes/protectedRoutes.js";
 import messagesRoutes from "./routes/messagesRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-import testRoute from "./routes/testRoute.js"
-import Message from "./models/Message.js"; // Import the Message model
+import testRoute from "./routes/testRoute.js";
 import http from "http"; // Import http module for WebSocket server
 import { Server } from "socket.io"; // Import Socket.IO
 
@@ -27,7 +26,8 @@ const io = new Server(server, {
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 connect(process.env.MONGO_URI, {})
   .then(() => console.log("MongoDB connected"))
