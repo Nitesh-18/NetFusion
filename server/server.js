@@ -4,6 +4,7 @@ dotenv.config(); // Load environment variables as early as possible
 import express from "express";
 import cors from "cors";
 import passport from "passport";
+import './config/passport.js'; // Import your Passport config where strategies are set up
 import { connect } from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
@@ -11,7 +12,6 @@ import postRoutes from "./routes/postRoutes.js";
 import protectedRoutes from "./routes/protectedRoutes.js";
 import messagesRoutes from "./routes/messagesRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-import testRoute from "./routes/testRoute.js";
 import http from "http"; // Import http module for WebSocket server
 import { Server } from "socket.io"; // Import Socket.IO
 
@@ -52,8 +52,6 @@ app.use("/api", messagesRoutes);
 
 // Use the Chat routes
 app.use("/api/chats", chatRoutes);
-
-app.use("/api", testRoute);
 
 // WebSocket server setup
 io.on("connection", (socket) => {

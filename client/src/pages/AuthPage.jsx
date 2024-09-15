@@ -49,6 +49,11 @@ const AuthPage = () => {
     }
   };
 
+  // Handle Google Auth
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/api/auth/google";
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -153,6 +158,12 @@ const AuthPage = () => {
                   {loading ? <span className="loader"></span> : "Login"}
                 </button>
               </form>
+              <button
+                onClick={handleGoogleLogin}
+                className="w-full mt-4 py-3 bg-red-600 text-white font-bold rounded-md transition-all duration-500 hover:bg-red-700 transform hover:scale-105"
+              >
+                Login with Google
+              </button>
             </Tabs.Content>
 
             <Tabs.Content value="register" className="w-full">
@@ -219,6 +230,12 @@ const AuthPage = () => {
                   {loading ? <span className="loader"></span> : "Register"}
                 </button>
               </form>
+              <button
+                onClick={handleGoogleLogin}
+                className="w-full mt-4 py-3 bg-red-600 text-white font-bold rounded-md transition-all duration-500 hover:bg-red-700 transform hover:scale-105"
+              >
+                Register with Google
+              </button>
             </Tabs.Content>
           </motion.div>
         </Tabs.Root>

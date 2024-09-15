@@ -49,10 +49,10 @@ passport.use(
           });
           await user.save();
         }
-        return done(null, user); // Pass the user to the next middleware
+        return done(null, user); // Ensure done(null, user) is called here
       } catch (error) {
         console.error("Error in Google Strategy:", error);
-        return done(error, false); // Properly pass the error to done()
+        return done(error, false); // Pass error to done() correctly
       }
     }
   )

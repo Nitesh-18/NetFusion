@@ -3,6 +3,7 @@ import { authUser, registerUser } from "../controllers/authController.js";
 import passport from "passport";
 import jwt from "jsonwebtoken"; // Import jsonwebtoken package
 import User from "../models/User.js";
+import avatarUploadMiddleware from "../middlewares/avatarUploadMiddleware.js";
 
 const router = express.Router();
 
@@ -26,8 +27,12 @@ router.get(
       expiresIn: "1h",
     });
     res.json({ token });
+    res.redirect("/setup-profile");
   }
 );
+
+// Setup profile route
+router.post("/setup-profile", avatarUploadMiddleware, setupProfile);
 
 function generateToken(user) {
   // Generate and return JWT token for authenticated user

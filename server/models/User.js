@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String },
     avatar: { type: String }, // Profile picture
     bio: { type: String }, // Bio field for user profile
+    username: {type: String},
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
