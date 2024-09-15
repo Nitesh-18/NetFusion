@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // To handle navigation
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import queryString from "query-string"; // To parse Google Auth redirect URL
+import queryString from "query-string";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 
 const AuthPage = () => {
   const [formData, setFormData] = useState({
@@ -14,14 +16,12 @@ const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); // For redirection
+  const navigate = useNavigate();
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Form validation logic
   const validateForm = () => {
     let newErrors = {};
     if (!formData.email) newErrors.email = "Email is required";
@@ -30,7 +30,6 @@ const AuthPage = () => {
     return newErrors;
   };
 
-  // Handle form submission for login/register
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validateForm();
@@ -46,54 +45,45 @@ const AuthPage = () => {
         : "http://localhost:8080/api/auth/register";
       const response = await axios.post(endpoint, formData);
 
-      const { redirectUrl, token } = response.data; // Extract redirectUrl and token
+      const { redirectUrl, token } = response.data;
 
-      // Store the token in localStorage
       localStorage.setItem("authToken", token);
 
-      // Redirect based on the server-sent URL
-      window.location.href = `http://localhost:5173${redirectUrl}`;
+      if (isLogin) {
+        navigate("/home");
+      } else {
+        navigate("/setup-profile");
+      }
     } catch (error) {
-      console.error(error.response?.data?.message);
+      const errorMessage = error.response?.data?.message || "An error occurred";
+      toast.error(errorMessage); // Show error pop-up
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Google Auth login
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:8080/api/auth/google";
   };
 
-  // Handle Google Auth redirect after successful authentication
   useEffect(() => {
-    const parsed = queryString.parse(window.location.search); // Parse the query string
+    const parsed = queryString.parse(window.location.search);
     const { token, redirectUrl } = parsed;
 
     if (token) {
-      // Store the token received from the URL
       localStorage.setItem("authToken", token);
-
-      // Redirect the user based on redirectUrl or default to home
       navigate(redirectUrl || "/home");
     }
   }, [navigate]);
-
-  // Handle Tab switching between login and register
-  const handleTabChange = (tab) => {
-    setIsLogin(tab === "login");
-    setErrors({});
-  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 1.2 }} // Slower transition on page load
+      transition={{ duration: 1.2 }}
       className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-indigo-900 text-white"
     >
-      {/* Subtle moving gradient background */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-purple-900 to-indigo-900"
         animate={{ backgroundPosition: ["0% 50%", "100% 50%"] }}
@@ -104,7 +94,7 @@ const AuthPage = () => {
       <motion.div
         initial={{ scale: 0.95, opacity: 0.8 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeInOut" }} // Adding bounce effect
+        transition={{ duration: 0.5, ease: "easeInOut" }}
         className="relative z-10 w-full max-w-lg p-6 bg-gray-800 rounded-lg shadow-lg"
       >
         <Tabs.Root
@@ -139,7 +129,7 @@ const AuthPage = () => {
             initial={{ opacity: 0, x: isLogin ? -100 : 100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: isLogin ? 100 : -100 }}
-            transition={{ duration: 0.6, ease: "easeInOut" }} // Slower, smoother transitions
+            transition={{ duration: 0.6, ease: "easeInOut" }}
           >
             <Tabs.Content value="login" className="w-full">
               <h2 className="text-3xl font-bold text-center mb-6">
@@ -199,26 +189,28 @@ const AuthPage = () => {
 
             <Tabs.Content value="register" className="w-full">
               <h2 className="text-3xl font-bold text-center mb-6">
-                Create Your Account
+                Create an Account
               </h2>
-              <p className="text-center mb-6">Sign up to get started</p>
+              <p className="text-center mb-6">Register a new account</p>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium">Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-2 mt-1 bg-gray-700 border ${
-                      errors.name ? "border-red-500" : "border-gray-600"
-                    } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300`}
-                    required
-                  />
-                  {errors.name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                  )}
-                </div>
+                {!isLogin && (
+                  <div>
+                    <label className="block text-sm font-medium">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 mt-1 bg-gray-700 border ${
+                        errors.name ? "border-red-500" : "border-gray-600"
+                      } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300`}
+                      required
+                    />
+                    {errors.name && (
+                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium">Email</label>
                   <input
@@ -271,6 +263,9 @@ const AuthPage = () => {
           </motion.div>
         </Tabs.Root>
       </motion.div>
+
+      {/* Toast Container */}
+      <ToastContainer />
     </motion.div>
   );
 };
