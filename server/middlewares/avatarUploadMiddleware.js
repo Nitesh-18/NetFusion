@@ -1,5 +1,5 @@
 import multer from "multer";
-import { bucket } from "../config/firebase.js"; // Import the Firebase bucket
+import { bucket } from "../config/firebaseConfig.js"; // Import the Firebase bucket
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 

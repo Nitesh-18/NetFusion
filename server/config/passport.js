@@ -38,21 +38,23 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if a user already exists with this Google ID
         let user = await User.findOne({ googleId: profile.id });
+
         if (!user) {
-          // Create a new user if one doesn't exist
+          // If user doesn't exist, create a new one and redirect to setup profile
           user = new User({
             googleId: profile.id,
             name: profile.displayName,
-            email: profile.emails[0].value, // Ensure emails[0] is not undefined
+            email: profile.emails[0].value,
           });
           await user.save();
+          return done(null, user, { isNewUser: true });
         }
-        return done(null, user); // Ensure done(null, user) is called here
+
+        // Existing user
+        return done(null, user, { isNewUser: false });
       } catch (error) {
-        console.error("Error in Google Strategy:", error);
-        return done(error, false); // Pass error to done() correctly
+        return done(error, false);
       }
     }
   )

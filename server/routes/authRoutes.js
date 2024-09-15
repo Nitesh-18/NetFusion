@@ -1,5 +1,9 @@
 import express from "express";
-import { authUser, registerUser } from "../controllers/authController.js";
+import {
+  authUser,
+  registerUser,
+  setupProfile,
+} from "../controllers/authController.js";
 import passport from "passport";
 import jwt from "jsonwebtoken"; // Import jsonwebtoken package
 import User from "../models/User.js";
@@ -22,12 +26,17 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   (req, res) => {
-    // Generate a JWT token
-    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    res.json({ token });
-    res.redirect("/setup-profile");
+
+    if (req.authInfo.isNewUser) {
+      // If the user is new, redirect them to the setup-profile page
+      res.redirect(`http://localhost:5173/setup-profile?token=${token}`);
+    } else {
+      // If the user is returning, redirect them to the home page
+      res.redirect(`http://localhost:5173/home?token=${token}`);
+    }
   }
 );
 

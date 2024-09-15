@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom"; // To handle navigation
 import axios from "axios";
+import queryString from "query-string"; // To parse Google Auth redirect URL
 
 const AuthPage = () => {
   const [formData, setFormData] = useState({
@@ -12,12 +14,14 @@ const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); // For redirection
 
+  // Handle form input changes
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Form validation
+  // Form validation logic
   const validateForm = () => {
     let newErrors = {};
     if (!formData.email) newErrors.email = "Email is required";
@@ -41,17 +45,44 @@ const AuthPage = () => {
         ? "http://localhost:8080/api/auth/login"
         : "http://localhost:8080/api/auth/register";
       const response = await axios.post(endpoint, formData);
-      console.log(response.data);
+
+      const { redirectUrl, token } = response.data; // Extract redirectUrl and token
+
+      // Store the token in localStorage
+      localStorage.setItem("authToken", token);
+
+      // Redirect based on the server-sent URL
+      window.location.href = `http://localhost:5173${redirectUrl}`;
     } catch (error) {
-      console.error(error.response.data.message);
+      console.error(error.response?.data?.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Google Auth
+  // Handle Google Auth login
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:8080/api/auth/google";
+  };
+
+  // Handle Google Auth redirect after successful authentication
+  useEffect(() => {
+    const parsed = queryString.parse(window.location.search); // Parse the query string
+    const { token, redirectUrl } = parsed;
+
+    if (token) {
+      // Store the token received from the URL
+      localStorage.setItem("authToken", token);
+
+      // Redirect the user based on redirectUrl or default to home
+      navigate(redirectUrl || "/home");
+    }
+  }, [navigate]);
+
+  // Handle Tab switching between login and register
+  const handleTabChange = (tab) => {
+    setIsLogin(tab === "login");
+    setErrors({});
   };
 
   return (
