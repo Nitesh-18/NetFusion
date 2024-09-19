@@ -102,8 +102,9 @@ const setupProfile = async (req, res) => {
 const suggestUsernames = async (req, res) => {
   const { query } = req.query; // Get the query parameter from the request
 
-  if (!query) {
-    return res.status(400).json({ message: "Query parameter is required" });
+  // Validate the query parameter
+  if (typeof query !== 'string' || query.trim() === '') {
+    return res.status(400).json({ message: "Query parameter is required and must be a non-empty string" });
   }
 
   try {
@@ -115,12 +116,16 @@ const suggestUsernames = async (req, res) => {
       name: { $regex: `^${escapedQuery}`, $options: "i" }, // Case-insensitive match
     }).limit(10); // Limit to 10 suggestions
 
-    // Send back the list of names (or another field if needed)
-    res.json(suggestions.map((user) => user.name) || []);
+    // Send back the list of names
+    res.json({
+      suggestions: suggestions.map((user) => user.name),
+      count: suggestions.length
+    });
   } catch (error) {
     console.error("Error fetching username suggestions:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export { authUser, registerUser, setupProfile, suggestUsernames };
