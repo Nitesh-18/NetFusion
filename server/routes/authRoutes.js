@@ -8,10 +8,12 @@ import passport from "passport";
 import jwt from "jsonwebtoken"; // Import jsonwebtoken package
 import User from "../models/User.js";
 import avatarUploadMiddleware from "../middlewares/avatarUploadMiddleware.js";
+import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 router.post("/login", authUser);
+
 router.post("/register", registerUser);
 
 // Google OAuth routes
@@ -26,6 +28,10 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
     const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
@@ -41,7 +47,7 @@ router.get(
 );
 
 // Setup profile route
-router.post("/setup-profile", avatarUploadMiddleware, setupProfile);
+router.post("/setup-profile", protect, avatarUploadMiddleware, setupProfile);
 
 function generateToken(user) {
   // Generate and return JWT token for authenticated user

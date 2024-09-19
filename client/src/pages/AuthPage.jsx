@@ -32,6 +32,8 @@ const AuthPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate form data before sending request
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -40,40 +42,63 @@ const AuthPage = () => {
 
     setLoading(true);
     try {
+      // Determine the endpoint for login or registration
       const endpoint = isLogin
-        ? "http://localhost:8080/api/auth/login"
-        : "http://localhost:8080/api/auth/register";
+        ? "http://localhost:8080/api/auth/login" // Login endpoint
+        : "http://localhost:8080/api/auth/register"; // Register endpoint
+
+      // Send formData to login or register the user
       const response = await axios.post(endpoint, formData);
 
-      const { redirectUrl, token } = response.data;
+      // Extract token and redirect URL from the response
+      const { token, redirectUrl } = response.data;
 
+      // Store the token in localStorage for authentication
       localStorage.setItem("authToken", token);
 
+      // Redirect based on login or registration flow
       if (isLogin) {
-        navigate("/home");
+        navigate("/home"); // Redirect to home after login
       } else {
-        navigate("/setup-profile");
+        navigate(redirectUrl); // Redirect to setup-profile after registration
       }
     } catch (error) {
+      // Show error message if any issues during login/registration
       const errorMessage = error.response?.data?.message || "An error occurred";
-      toast.error(errorMessage); // Show error pop-up
+      toast.error(errorMessage);
     } finally {
+      // Stop the loading state
       setLoading(false);
     }
   };
 
+  // Temporarily handle Google Login/Register
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8080/api/auth/google";
+    // Show under development message
+    toast.info("Under Development");
+
+    // Commented out Google Auth logic
+    // window.location.href = "http://localhost:8080/api/auth/google";
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      const parsed = queryString.parse(window.location.search);
+      const { token, redirectUrl } = parsed;
+
+      if (token) {
+        localStorage.setItem("authToken", token);
+        navigate(redirectUrl || "/home");
+      }
+    } catch (error) {
+      // Handle any errors that might occur during Google Auth
+      const errorMessage = error.response?.data?.message || "An error occurred";
+      toast.error(errorMessage);
+    }
   };
 
   useEffect(() => {
-    const parsed = queryString.parse(window.location.search);
-    const { token, redirectUrl } = parsed;
-
-    if (token) {
-      localStorage.setItem("authToken", token);
-      navigate(redirectUrl || "/home");
-    }
+    handleGoogleAuth();
   }, [navigate]);
 
   return (
@@ -82,15 +107,39 @@ const AuthPage = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 1.2 }}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-indigo-900 text-white"
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-indigo-900 text-white relative overflow-hidden"
     >
+      {/* Background Gradient Movement */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-purple-900 to-indigo-900"
-        animate={{ backgroundPosition: ["0% 50%", "100% 50%"] }}
-        transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-        style={{ backgroundSize: "200%" }}
+        animate={{
+          backgroundPosition: ["0% 50%", "100% 50%"],
+          backgroundSize: "200%",
+        }}
+        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
       />
-
+  
+      {/* Moving Objects (Circles or Blobs) */}
+      <motion.div
+        className="absolute w-64 h-64 bg-blue-500 rounded-full opacity-20"
+        animate={{ x: ["-100%", "100%"], y: ["0%", "100%"] }}
+        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+        style={{ top: "10%", left: "-10%" }}
+      />
+      <motion.div
+        className="absolute w-48 h-48 bg-purple-500 rounded-full opacity-20"
+        animate={{ x: ["100%", "-100%"], y: ["100%", "0%"] }}
+        transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+        style={{ bottom: "20%", right: "-10%" }}
+      />
+      <motion.div
+        className="absolute w-56 h-56 bg-indigo-500 rounded-full opacity-20"
+        animate={{ x: ["-100%", "100%"], y: ["100%", "0%"] }}
+        transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+        style={{ bottom: "10%", left: "-10%" }}
+      />
+  
+      {/* Auth Form Section */}
       <motion.div
         initial={{ scale: 0.95, opacity: 0.8 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -123,7 +172,7 @@ const AuthPage = () => {
               Register
             </Tabs.Trigger>
           </Tabs.List>
-
+  
           <motion.div
             key={isLogin ? "login" : "register"}
             initial={{ opacity: 0, x: isLogin ? -100 : 100 }}
@@ -166,9 +215,7 @@ const AuthPage = () => {
                     required
                   />
                   {errors.password && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.password}
-                    </p>
+                    <p className="text-red-500 text-sm mt-1">{errors.password}</p>
                   )}
                 </div>
                 <button
@@ -180,13 +227,15 @@ const AuthPage = () => {
                 </button>
               </form>
               <button
-                onClick={handleGoogleLogin}
+                onClick={() => {
+                  handleGoogleLogin();
+                }}
                 className="w-full mt-4 py-3 bg-red-600 text-white font-bold rounded-md transition-all duration-500 hover:bg-red-700 transform hover:scale-105"
               >
                 Login with Google
               </button>
             </Tabs.Content>
-
+  
             <Tabs.Content value="register" className="w-full">
               <h2 className="text-3xl font-bold text-center mb-6">
                 Create an Account
@@ -254,7 +303,9 @@ const AuthPage = () => {
                 </button>
               </form>
               <button
-                onClick={handleGoogleLogin}
+                onClick={() => {
+                  handleGoogleLogin();
+                }}
                 className="w-full mt-4 py-3 bg-red-600 text-white font-bold rounded-md transition-all duration-500 hover:bg-red-700 transform hover:scale-105"
               >
                 Register with Google
@@ -263,11 +314,10 @@ const AuthPage = () => {
           </motion.div>
         </Tabs.Root>
       </motion.div>
-
-      {/* Toast Container */}
-      <ToastContainer />
     </motion.div>
   );
+  
+  
 };
 
 export default AuthPage;

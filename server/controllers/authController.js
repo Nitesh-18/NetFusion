@@ -32,16 +32,22 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(400).json({ message: "User already exists" });
   } else {
     const user = await User.create({ name, email, password });
-
+    const token = generateToken(user._id);
     if (user) {
       res.status(201).json({
         _id: user._id,
         name: user.name,
         email: user.email,
-        token: generateToken(user._id),
+        token,
         redirectUrl: "/setup-profile",
       });
     } else {
+      // Handle duplicate key error
+      if (error.code === 11000) {
+        return res
+          .status(400)
+          .json({ message: "User already exists with this email" });
+      }
       res.status(400).json({ message: "Invalid user data" });
     }
   }
@@ -50,51 +56,46 @@ const registerUser = asyncHandler(async (req, res) => {
 // Controller for setting up the user profile
 const setupProfile = async (req, res) => {
   const { username, bio, followIds } = req.body;
-  const userId = req.user._id;
+  const userId = req.user._id; // The authenticated user
 
-  // Validate input
   if (!username) {
     return res.status(400).json({ message: "Username is required" });
   }
-
   if (!bio) {
     return res.status(400).json({ message: "Bio is required" });
   }
 
-  // if (!Array.isArray(followIds) || followIds.length < 5) {        Currently commenting it out, after some existing users get set up, turn it ON !
-  //   return res
-  //     .status(400)
-  //     .json({ message: "You must follow at least 5 users" });
-  // }
-
   try {
-    // Check if the username is already taken
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ message: "Username is already taken" });
+    // Fetch the user to check if they are new and need profile setup
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Get the avatar URL from the upload middleware (if provided)
-    const avatarUrl = req.avatarUrl || null;
+    // Check if the user profile is already set up
+    if (user.username && user.bio) {
+      return res.status(400).json({ message: "Profile already set up" });
+    }
 
     // Update the user's profile
-    const user = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
         username,
         bio,
-        avatar: avatarUrl, // Optional: only update if avatarUrl is provided
-        $addToSet: { following: { $each: followIds } }, // Add unique followings
+        avatar: req.avatarUrl || null,
+        $addToSet: { following: followIds || [] },
       },
-      { new: true } // Return the updated user document
+      { new: true }
     );
 
-    // Respond with the updated user profile
-    res.status(200).json({ message: "Profile updated successfully", user });
+    res.status(200).json({ message: "Profile setup successfully", user: updatedUser });
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error("Error setting up the profile:", error);
     res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
+
 
 export { authUser, registerUser, setupProfile };

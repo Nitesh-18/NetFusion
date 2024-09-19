@@ -49,9 +49,12 @@ passport.use(
           });
           await user.save();
           return done(null, user, { isNewUser: true });
+        } else if (!user.username || !user.bio) {
+          // If user exists but hasn't completed profile setup
+          return done(null, user, { isNewUser: true });
         }
 
-        // Existing user
+        // Existing user with completed profile
         return done(null, user, { isNewUser: false });
       } catch (error) {
         return done(error, false);

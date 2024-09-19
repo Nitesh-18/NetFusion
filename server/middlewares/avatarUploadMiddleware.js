@@ -3,6 +3,9 @@ import { bucket } from "../config/firebaseConfig.js"; // Import the Firebase buc
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+const DEFAULT_AVATAR_URL =
+  "https://firebasestorage.googleapis.com/v0/b/netfusion-7c638.appspot.com/o/Avatar%2FDefault-Avatar.png?alt=media&token=6e3ff85e-ea26-4bf6-b846-0651529dc607";
+
 // Set up Multer for handling file uploads
 const storage = multer.memoryStorage(); // Store files in memory
 
@@ -28,6 +31,11 @@ const avatarUploadMiddleware = (req, res, next) => {
     }
 
     if (!req.file) {
+      // Handle case where no file was uploaded, but default URL was provided
+      if (req.body.avatar === DEFAULT_AVATAR_URL) {
+        req.avatarUrl = req.body.avatar;
+        return next(); // Proceed to the next middleware or route handler
+      }
       return res.status(400).json({ message: "No file uploaded" });
     }
 
@@ -55,7 +63,7 @@ const avatarUploadMiddleware = (req, res, next) => {
         // Make the file public or generate a signed URL
         const [signedUrl] = await blob.getSignedUrl({
           action: "read",
-          expires: "01-01-2030", // Set an appropriate expiration date
+          expires: "01-01-2030",
         });
 
         // Add the signed URL to the request object for further processing
