@@ -1,12 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import axios from "axios";
+import debounce from "lodash.debounce";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const DEFAULT_AVATAR_URL =
   "https://firebasestorage.googleapis.com/v0/b/netfusion-7c638.appspot.com/o/Avatar%2FDefault-Avatar.png?alt=media&token=6e3ff85e-ea26-4bf6-b846-0651529dc607";
+
+// Debounced fetch function
+const fetchUsernameSuggestions = debounce(async (query, setSuggestions) => {
+  try {
+    const response = await axios.get(
+      `http://localhost:8080/api/auth/username-suggestions?query=${query}`
+    );
+    setSuggestions(response.data);
+  } catch (error) {
+    console.error("Error fetching username suggestions:", error);
+    setSuggestions([]);
+  }
+}, 300); // Adjust debounce delay as needed
 
 const ProgressBar = ({ step, totalSteps }) => {
   const progress = (step / totalSteps) * 100;
@@ -18,18 +32,6 @@ const ProgressBar = ({ step, totalSteps }) => {
       ></div>
     </div>
   );
-};
-
-const fetchUsernameSuggestions = async (username) => {
-  try {
-    const response = await axios.get(
-      `http://localhost:8080/api/auth/username-suggestions?username=${username}`
-    );
-    return response.data.suggestions;
-  } catch (error) {
-    console.error("Error fetching username suggestions:", error);
-    return [];
-  }
 };
 
 const SetupProfilePage = () => {
@@ -55,9 +57,7 @@ const SetupProfilePage = () => {
     }
 
     if (step === 1 && formData.username) {
-      fetchUsernameSuggestions(formData.username).then((suggestions) =>
-        setUsernameSuggestions(suggestions)
-      );
+      fetchUsernameSuggestions(formData.username, setUsernameSuggestions);
     }
   }, [formData.avatar, formData.username, step]);
 
@@ -109,7 +109,6 @@ const SetupProfilePage = () => {
       if (formData.avatar) {
         formDataToSend.append("avatar", formData.avatar);
       } else {
-        // Append the default avatar URL as a fallback
         formDataToSend.append("avatar", DEFAULT_AVATAR_URL);
       }
       formDataToSend.append("bio", formData.bio);
@@ -168,16 +167,21 @@ const SetupProfilePage = () => {
             {errors.username && (
               <p className="text-red-500 mt-2">{errors.username}</p>
             )}
-            <ul className="mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              {usernameSuggestions.map((suggestion, index) => (
-                <li
-                  key={index}
-                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
-                >
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
+            {usernameSuggestions.length > 0 && (
+              <ul className="mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+                {usernameSuggestions.map((suggestion, index) => (
+                  <li
+                    key={index}
+                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
+                    onClick={() =>
+                      setFormData({ ...formData, username: suggestion })
+                    }
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
             <button
               onClick={handleNextStep}
               className="mt-6 w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
@@ -199,7 +203,7 @@ const SetupProfilePage = () => {
                 type="file"
                 name="avatar"
                 onChange={handleInputChange}
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               {avatarPreview && (
                 <img
@@ -245,7 +249,8 @@ const SetupProfilePage = () => {
               onChange={handleInputChange}
               className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-gray-200"
               placeholder="Write a short bio..."
-            ></textarea>
+              rows="4"
+            />
             {errors.bio && <p className="text-red-500 mt-2">{errors.bio}</p>}
             <div className="flex space-x-4 mt-6">
               <button
@@ -257,9 +262,8 @@ const SetupProfilePage = () => {
               <button
                 onClick={handleSubmit}
                 className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
-                disabled={loading}
               >
-                {loading ? "Submitting..." : "Submit"}
+                Submit
               </button>
             </div>
           </motion.div>

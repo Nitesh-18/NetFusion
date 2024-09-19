@@ -90,12 +90,37 @@ const setupProfile = async (req, res) => {
       { new: true }
     );
 
-    res.status(200).json({ message: "Profile setup successfully", user: updatedUser });
+    res
+      .status(200)
+      .json({ message: "Profile setup successfully", user: updatedUser });
   } catch (error) {
     console.error("Error setting up the profile:", error);
     res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
 
+const suggestUsernames = async (req, res) => {
+  const { query } = req.query; // Get the query parameter from the request
 
-export { authUser, registerUser, setupProfile };
+  if (!query) {
+    return res.status(400).json({ message: "Query parameter is required" });
+  }
+
+  try {
+    // Escape special characters in the query string
+    const escapedQuery = query.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
+
+    // Find names starting with the query parameter
+    const suggestions = await User.find({
+      name: { $regex: `^${escapedQuery}`, $options: "i" }, // Case-insensitive match
+    }).limit(10); // Limit to 10 suggestions
+
+    // Send back the list of names (or another field if needed)
+    res.json(suggestions.map((user) => user.name) || []);
+  } catch (error) {
+    console.error("Error fetching username suggestions:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export { authUser, registerUser, setupProfile, suggestUsernames };

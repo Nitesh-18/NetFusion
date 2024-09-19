@@ -3,6 +3,7 @@ import {
   authUser,
   registerUser,
   setupProfile,
+  suggestUsernames,
 } from "../controllers/authController.js";
 import passport from "passport";
 import jwt from "jsonwebtoken"; // Import jsonwebtoken package
@@ -46,6 +47,8 @@ router.get(
   }
 );
 
+
+
 // Setup profile route
 router.post("/setup-profile", protect, avatarUploadMiddleware, setupProfile);
 
@@ -55,5 +58,8 @@ function generateToken(user) {
     expiresIn: "1h",
   });
 }
+
+// Endpoint to get username suggestions
+router.get('/username-suggestions', suggestUsernames);
 
 export default router;
