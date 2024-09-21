@@ -18,10 +18,29 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.create-post-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.media-dropdown select {
+  width: 180px;
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 8px;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.media-dropdown select:focus {
+  border-color: #3b82f6;
+}
+
 button {
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease-in-out;
 }
 
 button:hover {
-  background-color: #f0f0f0;
+  background-color: #2563eb;
 }
