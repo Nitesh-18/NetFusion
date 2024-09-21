@@ -1,0 +1,27 @@
+.homepage {
+  padding: 2rem;
+  gap: 1.5rem;
+}
+
+.chat-sidebar,
+.post-feed {
+  border-radius: 0.5rem;
+}
+
+.chat-sidebar {
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.post-feed {
+  background-color: #f9fafb;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button {
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #f0f0f0;
+}

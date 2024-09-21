@@ -1,6 +1,6 @@
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
-import { bucket } from "../config/firebaseConfig.js";
+import { bucket } from "../config/firebaseConfig.js"; // Adjust the path as needed
 
 // Configure Multer storage
 const storage = multer.memoryStorage(); // Store files in memory for processing
@@ -36,47 +36,43 @@ export const uploadToFirebase = async (req, res, next) => {
     if (req.files) {
       for (const [fieldName, files] of Object.entries(req.files)) {
         for (const file of files) {
-          // Ensure the file matches its field
-          const validFieldType =
-            (fieldName === "image" && file.mimetype.startsWith("image/")) ||
-            (fieldName === "video" && file.mimetype.startsWith("video/"));
-
-          if (!validFieldType) {
-            return res
-              .status(400)
-              .json({ message: `Invalid file type for field ${fieldName}` });
-          }
-
-          const fileName = `${uuidv4()}_${file.originalname}`;
+          const folder = fieldName === "image" ? "Image-Post" : "Video-Post";
+          const fileName = `${folder}/${uuidv4()}_${file.originalname}`;
           const blob = bucket.file(fileName);
 
           // Create a write stream to upload file to Firebase
-          const blobStream = blob.createWriteStream({
-            metadata: {
-              contentType: file.mimetype,
-            },
+          await new Promise((resolve, reject) => {
+            const blobStream = blob.createWriteStream({
+              metadata: {
+                contentType: file.mimetype,
+              },
+            });
+
+            blobStream.on("error", (err) => {
+              reject(err);
+            });
+
+            blobStream.on("finish", async () => {
+              // Get the signed URL after the upload completes
+              try {
+                const [url] = await blob.getSignedUrl({
+                  action: "read",
+                  expires: "03-01-2500",
+                });
+                fileUploads.push({ fieldName, url });
+                resolve(); // Resolve the promise when the URL is obtained
+              } catch (urlError) {
+                reject(urlError);
+              }
+            });
+
+            blobStream.end(file.buffer);
           });
-
-          // Handle file upload
-          blobStream.on("error", (err) => {
-            next(err);
-          });
-
-          blobStream.end(file.buffer);
-
-          fileUploads.push(
-            blob
-              .getSignedUrl({
-                action: "read",
-                expires: "03-01-2500",
-              })
-              .then((url) => ({ fieldName, url: url[0] })) // Ensure URL is a single string
-          );
         }
       }
     }
 
-    req.uploadedFiles = await Promise.all(fileUploads);
+    req.uploadedFiles = fileUploads;
     next();
   } catch (error) {
     next(error);

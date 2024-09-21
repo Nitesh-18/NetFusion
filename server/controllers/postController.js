@@ -7,11 +7,19 @@ export const createPost = async (req, res) => {
     const { content } = req.body;
     const fileUploads = req.uploadedFiles || [];
 
+    const imageUrl = fileUploads.find((file) => file.fieldName === 'image')?.url;
+    const videoUrl = fileUploads.find((file) => file.fieldName === 'video')?.url;
+
+    // Check if neither image nor video is provided
+    if (!imageUrl && !videoUrl) {
+      return res.status(400).json({ message: 'You must upload an image or video to create a post.' });
+    }
+
     const newPost = new Post({
-      user: req.user._id,
+      user: req.user._id, // Assuming you are using a `protect` middleware for authentication
       content,
-      image: fileUploads.find((file) => file.fieldName === "image")?.url,
-      video: fileUploads.find((file) => file.fieldName === "video")?.url,
+      image: imageUrl,
+      video: videoUrl,
     });
 
     await newPost.save();
@@ -20,6 +28,7 @@ export const createPost = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 export const updatePost = async (req, res) => {
   try {
@@ -63,12 +72,16 @@ export const deletePost = async (req, res) => {
     const filesToDelete = [];
 
     if (post.image) {
-      const imageName = decodeURIComponent(post.image.split("/").pop().split("?")[0]);
+      const imageName = decodeURIComponent(
+        post.image.split("/").pop().split("?")[0]
+      );
       filesToDelete.push(imageName);
       console.log("Image file to delete:", imageName);
     }
     if (post.video) {
-      const videoName = decodeURIComponent(post.video.split("/").pop().split("?")[0]);
+      const videoName = decodeURIComponent(
+        post.video.split("/").pop().split("?")[0]
+      );
       filesToDelete.push(videoName);
       console.log("Video file to delete:", videoName);
     }
@@ -92,13 +105,13 @@ export const deletePost = async (req, res) => {
   }
 };
 
-
-
-
-// Get all posts (unchanged)
+// Get all posts 
 export const getPosts = async (req, res) => {
   try {
-    const posts = await Post.find().populate("user", "username");
+    const posts = await Post.find()
+      .populate("user", "username avatar") // Populate the username from the user field
+      .sort({ createdAt: -1 }); // Sort by newest posts
+
     res.status(200).json(posts);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -4,7 +4,7 @@ dotenv.config(); // Load environment variables as early as possible
 import express from "express";
 import cors from "cors";
 import passport from "passport";
-import './config/passport.js'; // Import your Passport config where strategies are set up
+import "./config/passport.js"; // Import your Passport config where strategies are set up
 import { connect } from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";

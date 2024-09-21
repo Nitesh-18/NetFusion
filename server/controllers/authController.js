@@ -11,11 +11,14 @@ const authUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
+    // Return token in response and set it in Authorization header
+    const token = generateToken(user._id);
+
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      token: generateToken(user._id),
+      token, // return the token so client can store it
       redirectUrl: "/home",
     });
   } else {
@@ -103,8 +106,12 @@ const suggestUsernames = async (req, res) => {
   const { query } = req.query; // Get the query parameter from the request
 
   // Validate the query parameter
-  if (typeof query !== 'string' || query.trim() === '') {
-    return res.status(400).json({ message: "Query parameter is required and must be a non-empty string" });
+  if (typeof query !== "string" || query.trim() === "") {
+    return res
+      .status(400)
+      .json({
+        message: "Query parameter is required and must be a non-empty string",
+      });
   }
 
   try {
@@ -119,13 +126,12 @@ const suggestUsernames = async (req, res) => {
     // Send back the list of names
     res.json({
       suggestions: suggestions.map((user) => user.name),
-      count: suggestions.length
+      count: suggestions.length,
     });
   } catch (error) {
     console.error("Error fetching username suggestions:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export { authUser, registerUser, setupProfile, suggestUsernames };

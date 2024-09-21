@@ -2,6 +2,22 @@
 import Chat from "../models/Chat.js";
 import Message from "../models/Message.js";
 
+// Controller to fetch all chats
+export const getAllChats = async (req, res) => {
+  try {
+    // Fetch all chats and populate participants and messages
+    const chats = await Chat.find()
+      .populate("participants", "username email") // populate participant details
+      .populate("messages"); // populate messages
+
+    // Send the chats data as response
+    res.status(200).json(chats);
+  } catch (error) {
+    console.error("Error fetching chats:", error);
+    res.status(500).json({ message: "Failed to fetch chats." });
+  }
+};
+
 // Create a new chat
 export const createChat = async (req, res) => {
   const { participants } = req.body;
