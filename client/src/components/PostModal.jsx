@@ -9,10 +9,27 @@ const PostModal = ({ isOpen, onClose, onSubmit, mediaType }) => {
     setFile(e.target.files[0]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit({ postContent, file, mediaType });
-    onClose(); // Close modal after submission
+
+    // Create a new FormData object
+    const formData = new FormData();
+    formData.append("content", postContent);
+
+    // Append the file with the correct field name based on the mediaType
+    if (file) {
+      if (mediaType === "image") {
+        formData.append("image", file); // Use "image" as the field name
+      } else if (mediaType === "video") {
+        formData.append("video", file); // Use "video" as the field name
+      }
+    }
+
+    // Call the onSubmit function to handle the API call for post creation
+    await onSubmit(formData);
+
+    // Close modal after successful submission
+    onClose();
   };
 
   if (!isOpen) return null;

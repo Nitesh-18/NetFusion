@@ -1,76 +1,84 @@
 import React, { useState, useEffect } from "react";
 import PostFeed from "../components/PostFeed";
 import ChatSidebar from "../components/ChatSidebar";
-import PostModal from "../components/PostModal"; // Importing PostModal component
+import PostModal from "../components/PostModal";
 import "../styles/HomePage-style.css";
 
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
   const [chats, setChats] = useState([]);
-  const [showModal, setShowModal] = useState(false); // State for modal visibility
-  const [mediaType, setMediaType] = useState(""); // State for selected media type
+  const [showModal, setShowModal] = useState(false);
+  const [mediaType, setMediaType] = useState("");
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const response = await fetch("http://localhost:8080/api/posts", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch posts: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setPosts(data);
-      } catch (error) {
-        console.error("Error fetching posts:", error.message);
-      }
-    };
-
-    const fetchChats = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const response = await fetch("http://localhost:8080/api/chats", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch chats: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setChats(data);
-      } catch (error) {
-        console.error("Error fetching chats:", error.message);
-      }
-    };
-
     fetchPosts();
     fetchChats();
   }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch("http://localhost:8080/api/posts", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+      const data = await response.json();
+      setPosts(data);
+    } catch (error) {
+      console.error("Error fetching posts:", error.message);
+    }
+  };
+
+  const fetchChats = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch("http://localhost:8080/api/chats", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch chats: ${response.status}`);
+      }
+      const data = await response.json();
+      setChats(data);
+    } catch (error) {
+      console.error("Error fetching chats:", error.message);
+    }
+  };
 
   const handleCreatePostClick = () => {
     setShowModal(true); // Open modal when "Create Post" button is clicked
   };
 
-  const handleMediaTypeChange = (type) => {
-    setMediaType(type); // Set the media type (Image/Video)
-  };
+  const handleSubmitPost = async (formData) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch("http://localhost:8080/api/posts", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
-  const handlePostSubmit = (postData) => {
-    // Handle the post submission logic
-    console.log("Post submitted: ", postData);
-    setShowModal(false); // Close the modal after post submission
+      if (!response.ok) {
+        throw new Error("Failed to create post.");
+      }
+
+      const newPost = await response.json();
+      setPosts((prevPosts) => [newPost, ...prevPosts]); // Update the state with the new post
+    } catch (error) {
+      console.error("Error creating post:", error.message);
+    }
   };
 
   return (
@@ -91,15 +99,15 @@ const HomePage = () => {
         {/* Create Post Button */}
         <div className="create-post-container mb-4 flex justify-between items-center">
           <button
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
-            onClick={handleCreatePostClick} // Open modal on click
+            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            onClick={handleCreatePostClick}
           >
             Create Post
           </button>
           <div className="media-dropdown">
             <select
               className="border p-2 rounded-md"
-              onChange={(e) => handleMediaTypeChange(e.target.value)}
+              onChange={(e) => setMediaType(e.target.value)}
             >
               <option value="">Select Media</option>
               <option value="image">Image</option>
@@ -118,16 +126,17 @@ const HomePage = () => {
         )}
       </div>
 
-      {/* Placeholder for future components or space */}
       <div className="w-1/4"></div>
 
       {/* Post Modal */}
-      <PostModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)} // Close modal handler
-        onSubmit={handlePostSubmit} // Handle post submission
-        mediaType={mediaType} // Pass the media type to modal
-      />
+      {showModal && (
+        <PostModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onSubmit={handleSubmitPost}
+          mediaType={mediaType}
+        />
+      )}
     </div>
   );
 };
